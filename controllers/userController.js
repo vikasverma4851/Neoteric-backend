@@ -81,7 +81,7 @@ exports.loginUser = async (req, res) => {
       id: user._id,
       role: user.role,
       token,
-      username: user.name,
+      name: user.name,
     });
   } catch (error) {
     console.error("Error in loginUser:", error.message);
