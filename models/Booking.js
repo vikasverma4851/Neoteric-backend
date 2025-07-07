@@ -11,7 +11,14 @@ const bookingSchema = new mongoose.Schema({
   paymentType1: { type: Number, required: true },
   paymentType2: { type: Number, required: true },
   totalDealCost: { type: Number, required: true },
-  status: { type: String, default: "Active" },
+  floor: { type: Number, required: true },
+  // status: { type: String, default: "Active" },
+  status: {
+  type: String,
+  enum: ["pending", "active", "cancel"],
+  default: "pending",
+},
+
   taskId: { type: String, required: true, unique: true } // 👈 added
 });
 
