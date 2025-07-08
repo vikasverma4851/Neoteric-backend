@@ -9,12 +9,47 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
+// exports.registerUser = async (req, res) => {
+//   const { name, email, mobileNo, username, location, pswd, role } = req.body;
+//   try {
+//     const userExists = await User.findOne({ email });
+//     if (userExists)
+//       return res.status(400).json({ message: "User already exists" });
+
+//     const user = await User.create({
+//       name,
+//       email,
+//       mobileNo,
+//       username,
+//       location,
+//       pswd,
+//       role,
+//     });
+//     if (user) {
+//       res.status(201).json({
+//         id: user._id,
+//         role: user.role,
+//         token: generateToken(user._id, user.role),
+//       });
+//     } else {
+//       res.status(400).json({ message: "Invalid user data" });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 exports.registerUser = async (req, res) => {
   const { name, email, mobileNo, username, location, pswd, role } = req.body;
+
   try {
     const userExists = await User.findOne({ email });
-    if (userExists)
-      return res.status(400).json({ message: "User already exists" });
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists.",
+      });
+    }
 
     const user = await User.create({
       name,
@@ -25,19 +60,47 @@ exports.registerUser = async (req, res) => {
       pswd,
       role,
     });
+
     if (user) {
       res.status(201).json({
+        success: true,
+        message: "User registered successfully.",
         id: user._id,
         role: user.role,
         token: generateToken(user._id, user.role),
       });
     } else {
-      res.status(400).json({ message: "Invalid user data" });
+      res.status(400).json({
+        success: false,
+        message: "Invalid user data.",
+      });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    if (error.name === "ValidationError") {
+      // Mongoose validation errors
+      const messages = Object.values(error.errors).map((val) => val.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(", "),
+      });
+    }
+
+    if (error.code === 11000) {
+      // Duplicate key errors (for unique username)
+      const duplicateField = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        message: `${duplicateField} already exists.`,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Something went wrong while registering user.",
+    });
   }
 };
+
 
 exports.loginUser = async (req, res) => {
   console.log("Login request received:", req.body);

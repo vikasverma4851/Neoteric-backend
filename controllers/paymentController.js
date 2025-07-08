@@ -1,0 +1,81 @@
+// controllers/paymentController.js
+
+const Booking = require("../models/Booking");
+const Payment = require("../models/Payment");
+
+exports.receivePayment = async (req, res) => {
+  try {
+    const {
+      taskId,
+      paymentType,
+      todayReceiving,
+      paymentBy,
+      chequeTransactionNo
+    } = req.body;
+
+    const createdBy = req.user._id;
+
+
+    if (!taskId || !paymentType || !todayReceiving || !paymentBy) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    const booking = await Booking.findOne({ taskId });
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    const paymentTypeAmount = paymentType === "Payment Type 1"
+      ? booking.paymentType1
+      : booking.paymentType2;
+
+    const previousPayments = await Payment.find({ taskId, paymentType });
+    const totalPreviouslyReceived = previousPayments.reduce((sum, payment) => sum + payment.todayReceiving, 0);
+
+    const newTotalReceived = totalPreviouslyReceived + Number(todayReceiving);
+    const newBalanceAmount = paymentTypeAmount - newTotalReceived;
+
+    const payment = new Payment({
+      taskId,
+      paymentType,
+      todayReceiving: Number(todayReceiving),
+      totalReceived: newTotalReceived,
+      balanceAmount: newBalanceAmount >= 0 ? newBalanceAmount : 0,
+      paymentBy,
+      chequeTransactionNo,
+      createdBy,
+    });
+
+    await payment.save();
+
+    res.status(201).json({
+      message: "Payment recorded successfully.",
+      payment,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Error receiving payment.",
+      error: error.message,
+    });
+  }
+};
+
+exports.getAllPayments = async (req, res) => {
+  try {
+    const payments = await Payment.find().sort({ timestamp: -1 });
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch payments.", error: error.message });
+  }
+};
+
+exports.getPaymentsByTaskId = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const payments = await Payment.find({ taskId }).sort({ timestamp: -1 });
+    res.json(payments);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch payments.", error: error.message });
+  }
+};

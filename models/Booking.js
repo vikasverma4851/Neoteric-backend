@@ -15,11 +15,12 @@ const bookingSchema = new mongoose.Schema({
   // status: { type: String, default: "Active" },
   status: {
   type: String,
-  enum: ["pending", "active", "cancel"],
+  enum: ["pending", "active", "rejected"],
   default: "pending",
 },
 
-  taskId: { type: String, required: true, unique: true } // 👈 added
-});
+  taskId: { type: String, required: true, unique: true }, // 👈 added
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // <-- added
+}, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);

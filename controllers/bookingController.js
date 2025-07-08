@@ -4,6 +4,9 @@ exports.createBooking = async (req, res) => {
   try {
     const { projectName, projectType, clientName, unit, ...rest } = req.body;
 
+    const createdBy = req.user._id;
+
+
     // Generate clean, consistent taskId
     const taskId = `${projectName.trim()}/${projectType.trim()}/${unit.trim()}/${clientName.trim()}`;
 
@@ -13,9 +16,10 @@ exports.createBooking = async (req, res) => {
       clientName,
       unit,
       taskId, // 👈 auto-set
-      ...rest,
+      createdBy,
+        ...rest,
     });
-
+    
     await booking.save();
     res.status(201).json(booking);
   } catch (error) {

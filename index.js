@@ -3,6 +3,7 @@ require("dotenv").config({ path: "./.env" });
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 const bodyParser = require("body-parser");
 
 // const uploadRoutes = require('./routes/uploadRoutes');
@@ -33,6 +34,8 @@ app.get("/", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
+// Routes
+app.use("/api/payments", paymentRoutes);
 // app.use("/api/upload", uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
