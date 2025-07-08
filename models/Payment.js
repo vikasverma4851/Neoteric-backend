@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now },
-  taskId: { type: String, required: true },
+  // taskId: { type: String, required: true },
+  bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true },
+
   paymentType: { type: String, enum: ["Payment Type 1", "Payment Type 2"], required: true },
   totalReceived: { type: Number, required: true },
   todayReceiving: { type: Number, required: true },
