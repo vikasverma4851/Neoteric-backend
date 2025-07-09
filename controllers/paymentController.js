@@ -85,3 +85,53 @@ exports.getPaymentsByTaskId = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch payments.", error: error.message });
   }
 };
+
+
+exports.getFullyReceivedPaymentType2 = async (req, res) => {
+  try {
+    // Step 1: Get all bookings
+    const bookings = await Booking.find();
+
+    const fullyReceivedBookings = [];
+
+    for (const booking of bookings) {
+      if (booking.paymentType2 === 0) {
+        // paymentType2 is zero, include directly
+        fullyReceivedBookings.push(booking);
+      } else {
+        // Calculate total received paymentType2 payments
+        const payments = await Payment.aggregate([
+          { $match: { bookingId: booking._id, paymentType: "Payment Type 2" } },
+          {
+            $group: {
+              _id: null,
+              totalReceived: { $sum: "$todayReceiving" },
+            },
+          },
+        ]);
+
+        const totalReceived = payments[0]?.totalReceived || 0;
+
+        if (totalReceived >= booking.paymentType2) {
+          fullyReceivedBookings.push(booking);
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      count: fullyReceivedBookings.length,
+      data: fullyReceivedBookings,
+    });
+  } catch (error) {
+    console.error("Error in getFullyReceivedPaymentType2:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching fully received Payment Type 2 bookings",
+    });
+  }
+};
+
+
+
+
