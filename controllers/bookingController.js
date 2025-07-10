@@ -53,6 +53,29 @@ exports.updateBookingStatus = async (req, res) => {
   }
 };
 
+exports.deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedBooking = await Booking.findByIdAndDelete(id);
+
+    if (!deletedBooking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    res.status(200).json({
+      message: "Booking deleted successfully.",
+      deletedBooking,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
+
 exports.updateBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,7 +89,7 @@ exports.updateBooking = async (req, res) => {
       paymentType1,
       paymentType2,
       totalDealCost,
-      floor,
+      tower,
       status,
       ...rest
     } = req.body;
@@ -99,9 +122,10 @@ exports.updateBooking = async (req, res) => {
     if (totalDealCost === undefined || isNaN(totalDealCost)) {
       return res.status(400).json({ message: "Total Deal Cost is required and must be a number." });
     }
-    if (floor === undefined || isNaN(floor)) {
-      return res.status(400).json({ message: "Floor is required and must be a number." });
-    }
+    if (!floor || floor.toString().trim() === "") {
+  return res.status(400).json({ message: "Floor is required and must be a non-empty string." });
+}
+
 
     // Validate status if provided
     const allowedStatuses = ["pending", "active", "rejected"];
@@ -121,7 +145,8 @@ exports.updateBooking = async (req, res) => {
       paymentType1: Number(paymentType1),
       paymentType2: Number(paymentType2),
       totalDealCost: Number(totalDealCost),
-      floor: Number(floor),
+      floor: floor.toString().trim(),
+
       taskId,
       ...rest,
     };
@@ -147,26 +172,6 @@ exports.updateBooking = async (req, res) => {
       return res.status(400).json({ message: "Duplicate taskId detected. Please check projectName, projectType, unit, and clientName for uniqueness." });
     }
 
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-exports.deleteBooking = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const deletedBooking = await Booking.findByIdAndDelete(id);
-
-    if (!deletedBooking) {
-      return res.status(404).json({ message: "Booking not found." });
-    }
-
-    res.status(200).json({
-      message: "Booking deleted successfully.",
-      deletedBooking,
-    });
-  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

@@ -11,7 +11,7 @@ const bookingSchema = new mongoose.Schema({
   paymentType1: { type: Number, required: true },
   paymentType2: { type: Number, required: true },
   totalDealCost: { type: Number, required: true },
-  floor: { type: Number, required: true },
+  tower: { type: String, required: true },
   // status: { type: String, default: "Active" },
   status: {
   type: String,
