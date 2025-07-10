@@ -6,6 +6,7 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const bodyParser = require("body-parser");
 const emiRoutes = require("./routes/emiRoutes");
+const paymentReconciliationRoutes = require("./routes/paymentReconciliationRoutes");
 
 // const uploadRoutes = require('./routes/uploadRoutes');
 const cors = require("cors"); // Import the CORS package
@@ -39,6 +40,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 
 app.use("/api/emi", emiRoutes);
+app.use("/api/emi-receive", paymentReconciliationRoutes);
 // app.use("/api/upload", uploadRoutes);
 
 const PORT = process.env.PORT || 5000;
