@@ -2,6 +2,9 @@ const Booking = require("../models/Booking");
 const Payment = require("../models/Payment");
 const EMI = require("../models/EMI");
 
+const PaymentReconciliation = require("../models/PaymentReconciliation");
+
+
 exports.createEMI = async (req, res) => {
   try {
     const { bookingId, installments } = req.body;
@@ -100,27 +103,70 @@ exports.updateEMI = async (req, res) => {
 };
 
 
-// GET /api/emi/by-booking/:bookingId
+// // GET /api/emi/by-booking/:bookingId
+// exports.getEMIByBookingId = async (req, res) => {
+//   try {
+//     const { bookingId } = req.params;
+
+//     // Check if the booking exists
+//     const booking = await Booking.findById(bookingId);
+//     if (!booking) {
+//       return res.status(404).json({ message: "Booking not found." });
+//     }
+
+//     // Find EMI document linked to this booking
+//     const emi = await EMI.findOne({ bookingId: bookingId });
+//     if (!emi) {
+//       return res.status(404).json({ message: "EMI record not found for this booking." });
+//     }
+
+//     res.status(200).json({ emi });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error while fetching EMI." });
+//   }
+// };
+
+// In your emi controller
+
+
 exports.getEMIByBookingId = async (req, res) => {
   try {
     const { bookingId } = req.params;
-
-    // Check if the booking exists
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found." });
-    }
-
-    // Find EMI document linked to this booking
-    const emi = await EMI.findOne({ bookingId: bookingId });
+    const emi = await EMI.findOne({ bookingId });
     if (!emi) {
-      return res.status(404).json({ message: "EMI record not found for this booking." });
+      return res.status(404).json({ message: "EMI not found for this booking." });
     }
 
-    res.status(200).json({ emi });
+    // Aggregate received amounts for each installmentNo
+    const receivedData = await PaymentReconciliation.aggregate([
+      { $match: { emiId: emi._id } },
+      { $group: { _id: "$installmentNo", totalReceived: { $sum: "$todayReceiving" } } }
+    ]);
+
+    const receivedMap = {};
+    receivedData.forEach(item => {
+      receivedMap[item._id] = item.totalReceived;
+    });
+
+    // Attach received data to each installment
+    const installmentsWithReceived = emi.installments.map(inst => ({
+      ...inst.toObject(),
+      totalReceived: receivedMap[inst.installmentNo] || 0,
+      balance: inst.amount - (receivedMap[inst.installmentNo] || 0),
+    }));
+
+    res.json({
+      success: true,
+      emi: {
+        ...emi.toObject(),
+        installments: installmentsWithReceived,
+      },
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching EMI by booking:", error);
     res.status(500).json({ message: "Server error while fetching EMI." });
   }
 };
+
 
