@@ -7,6 +7,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const bodyParser = require("body-parser");
 const emiRoutes = require("./routes/emiRoutes");
 const paymentReconciliationRoutes = require("./routes/paymentReconciliationRoutes");
+const paymentHistoryRoutes = require("./routes/paymentHistoryRoutes");
 
 // const uploadRoutes = require('./routes/uploadRoutes');
 const cors = require("cors"); // Import the CORS package
@@ -41,6 +42,7 @@ app.use("/api/payments", paymentRoutes);
 
 app.use("/api/emi", emiRoutes);
 app.use("/api/emi-receive", paymentReconciliationRoutes);
+app.use("/api/payment-history",paymentHistoryRoutes);
 // app.use("/api/upload", uploadRoutes);
 
 const PORT = process.env.PORT || 5000;

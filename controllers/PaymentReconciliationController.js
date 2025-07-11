@@ -1,6 +1,7 @@
 const PaymentReconciliation = require("../models/PaymentReconciliation");
 const Booking = require("../models/Booking");
 const EMI = require("../models/EMI");
+const PaymentHistory = require("../models/PaymentHistory");
 
 exports.createPaymentReconciliation = async (req, res) => {
   try {
@@ -22,6 +23,8 @@ exports.createPaymentReconciliation = async (req, res) => {
     }
 
     const paymentReconciliationRecords = [];
+    const paymentHistoryRecords = [];
+
 
     for (const paymentReconciliation of paymentReconciliations) {
       const { installmentNo, todayReceiving, utr, bankDetail, receivedDate } = paymentReconciliation;
@@ -67,10 +70,37 @@ exports.createPaymentReconciliation = async (req, res) => {
         receivedDate,
         createdBy,
       });
+    
+
+      // Create PaymentHistory record aligned with your frontend
+      paymentHistoryRecords.push({
+        bookingId,
+        emiId: emi._id,
+        installmentNo,
+        clientId: booking.clientName || "N/A", // adjust field according to your Booking model
+        mobileNo: booking.clientMobile || "N/A", // adjust field according to your Booking model
+        emis: installmentNo,
+        installmentAmt: installment.amount,
+        amtReceived: todayReceiving,
+        utr: utr || "",
+        bankDetails: bankDetail || "",
+        receivingDate: receivedDate,
+        createdBy,
+      });
     }
 
     // Insert all paymentReconciliation records in one go
     await PaymentReconciliation.insertMany(paymentReconciliationRecords);
+
+    
+    
+ try {
+            const inserted = await PaymentHistory.insertMany(paymentHistoryRecords);
+            console.log("Inserted PaymentHistory successfully:", inserted);
+        } catch (e) {
+            console.error("Error inserting PaymentHistory:", e);
+            return res.status(500).json({ message: "Error inserting PaymentHistory.", error: e.message });
+        }
 
     // Save updated EMI installment paid statuses
     await emi.save();

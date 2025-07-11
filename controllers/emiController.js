@@ -154,7 +154,9 @@ exports.getEMIByBookingId = async (req, res) => {
       ...inst.toObject(),
       totalReceived: receivedMap[inst.installmentNo] || 0,
       balance: inst.amount - (receivedMap[inst.installmentNo] || 0),
+      
     }));
+    console.log("balance checking",installmentsWithReceived)
 
     res.json({
       success: true,
