@@ -6,5 +6,7 @@ const router = express.Router();
 
 // POST /api/payments/reconcile
 router.post("/reconcile",protect ,createPaymentReconciliation);
+// New route
+router.get("/reconciliations/:emiId", getReconciliationsByEmiId);
 
 module.exports = router;
