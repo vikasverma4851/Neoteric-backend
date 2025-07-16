@@ -1,5 +1,5 @@
 const express = require("express");
-const { createPaymentReconciliation } = require("../controllers/PaymentReconciliationController");
+const { createPaymentReconciliation,getReconciliationsByEmiId } = require("../controllers/PaymentReconciliationController");
 const { protect, authorizeRoles } = require("../middlewares/authMiddleware");
 
 const router = express.Router();
