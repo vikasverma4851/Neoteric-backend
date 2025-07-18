@@ -10,6 +10,8 @@ const paymentReconciliationSchema = new mongoose.Schema(
     bankDetail: { type: String },
     receivedDate: { type: Date, required: true },
     interest: { type: Number, default: 0 }, // Store interest
+interestReceived: { type: Number, default: 0 },
+
     isSubInstallment: { type: Boolean, default: false },
     parentDueDate: { type: Date }, // For sub-installments
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

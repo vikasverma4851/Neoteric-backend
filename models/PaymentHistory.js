@@ -10,13 +10,14 @@ const paymentHistorySchema = new mongoose.Schema(
     emis: { type: String, required: true },
     installmentAmt: { type: Number, required: true },
     interest: { type: Number, default: 0 }, // Store interest
+    interestReceived:{type:Number, default:0},
     amtReceived: { type: Number, required: true },
     utr: { type: String },
     bankDetails: { type: String },
     receivingDate: { type: Date, required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "PaymentHistory" }
 );
 
 const PaymentHistory = mongoose.model("PaymentHistory", paymentHistorySchema);

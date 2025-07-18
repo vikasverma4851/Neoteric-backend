@@ -7,6 +7,8 @@ const installmentSchema = new mongoose.Schema({
   totalReceived: { type: Number, default: 0 },
   balance: { type: Number, required: true },
   interest: { type: Number, default: 0 }, // Store interest
+  totalInterestReceived: { type: Number, default: 0 },
+
   paid: { type: Boolean, default: false },
   isSubInstallment: { type: Boolean, default: false },
   parentDueDate: { type: Date },

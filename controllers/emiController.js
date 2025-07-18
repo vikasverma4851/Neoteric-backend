@@ -5,29 +5,50 @@ const EMI = require("../models/EMI");
 const PaymentReconciliation = require("../models/PaymentReconciliation");
 
 // Calculate 2% per month as 0.02/30 per day accurately
+// const calculateInterest = (amount, fromDate, toDate) => {
+//   const from = new Date(fromDate);
+//   const to = new Date(toDate || new Date());
+
+//   const diffTime = to - from;
+//   const daysLate = diffTime / (1000 * 60 * 60 * 24);
+
+//   if (daysLate <= 0) return 0;
+
+//   const dailyRate = 0.02 / 30; // ~0.0006667 per day
+//   const interest =( amount * dailyRate * daysLate).toFixed(2);
+
+//   console.log({
+//     amount,
+//     fromDate,
+//     toDate,
+//     daysLate,
+//     dailyRate,
+//     interest
+//   });
+
+//   return interest;
+// };
+
 const calculateInterest = (amount, fromDate, toDate) => {
   const from = new Date(fromDate);
   const to = new Date(toDate || new Date());
+  from.setUTCHours(0, 0, 0, 0);
+  to.setUTCHours(0, 0, 0, 0);
 
   const diffTime = to - from;
-  const daysLate = diffTime / (1000 * 60 * 60 * 24);
+  const daysLate = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+  // const dailyRate = 0.02 / 30;
 
-  if (daysLate <= 0) return 0;
+ const dailyRate = parseFloat((0.02 / 30).toFixed(10)); // 0.0006666667
 
-  const dailyRate = 0.02 / 30; // ~0.0006667 per day
-  const interest = Math.round(amount * dailyRate * daysLate);
 
-  console.log({
-    amount,
-    fromDate,
-    toDate,
-    daysLate,
-    dailyRate,
-    interest
-  });
+
+  const interest = Number((amount * dailyRate * daysLate).toFixed(2));
+  console.log({ amount, fromDate, toDate, daysLate, dailyRate, interest });
 
   return interest;
 };
+
 
 exports.createEMI = async (req, res) => {
   try {
@@ -259,27 +280,89 @@ exports.getEMIByBookingId = async (req, res) => {
     });
 
     // Calculate interest and balance for each installment
-    const installmentsWithReceived = await Promise.all(emi.installments.map(async (inst) => {
-      const totalReceived = receivedMap[inst.installmentNo] || 0;
-      const balance = inst.amount - totalReceived;
-      let interest;
-      if (inst.isSubInstallment) {
-        // For sub-installments, use the main installment's latest receivedDate
-        const mainInstallmentNo = inst.installmentNo.split("-")[0];
-        const mainReconciliation = receivedData.find((item) => item._id === mainInstallmentNo);
-        const interestStartDate = mainReconciliation ? mainReconciliation.latestReceivedDate : inst.parentDueDate || inst.dueDate;
-        interest = calculateInterest(balance, interestStartDate, inst.commitmentDate || latestReceivedDateMap[inst.installmentNo] || new Date());
-      } else {
-        interest = calculateInterest(balance, inst.dueDate, latestReceivedDateMap[inst.installmentNo] || new Date());
-      }
-      return {
+    // const installmentsWithReceived = await Promise.all(emi.installments.map(async (inst) => {
+    //   const totalReceived = receivedMap[inst.installmentNo] || 0;
+    //   const balance = inst.amount - totalReceived;
+    //   let interest;
+    //   if (inst.isSubInstallment) {
+    //     // For sub-installments, use the main installment's latest receivedDate
+    //     const mainInstallmentNo = inst.installmentNo.split("-")[0];
+    //     const mainReconciliation = receivedData.find((item) => item._id === mainInstallmentNo);
+    //     const interestStartDate = mainReconciliation ? mainReconciliation.latestReceivedDate : inst.parentDueDate || inst.dueDate;
+    //     interest = calculateInterest(balance, interestStartDate, inst.commitmentDate || latestReceivedDateMap[inst.installmentNo] || new Date());
+
+    //     // For dueDays, use commitmentDate if available, else today
+    //   dueDateForCalc = interestStartDate || new Date();
+    //   } else {
+    //     interest = calculateInterest(balance, inst.dueDate, latestReceivedDateMap[inst.installmentNo] || new Date());
+
+    //  dueDateForCalc = inst.dueDate || new Date();
+    //   }
+
+      
+    // // Calculate dueDays
+    // const today = new Date();
+    // const dueDays = Math.ceil((today - new Date(dueDateForCalc)) / (1000 * 60 * 60 * 24));
+
+
+
+    //   return {
+    //     ...inst,
+    //     totalReceived,
+    //     balance,
+    //     interest,
+    //       dueDays: dueDays >= 0 ? dueDays : 0, // non-negative days
+    //     commitmentDate: inst.isSubInstallment ? inst.commitmentDate || latestReceivedDateMap[inst.installmentNo] : inst.commitmentDate,
+    //   };
+    // }));
+
+    // Calculate interest and balance for each installment
+const installmentsWithReceived = await Promise.all(emi.installments.map(async (inst) => {
+  const totalReceived = receivedMap[inst.installmentNo] || 0;
+  const balance = inst.amount - totalReceived;
+  let interest, dueDateForCalc;
+
+  const today = new Date();
+
+ const MS_IN_A_DAY = 1000 * 60 * 60 * 24;
+
+if (inst.isSubInstallment) {
+    const parentInstallmentNo = inst.installmentNo.split("-")[0];
+    const parentLatestReceivedDate = latestReceivedDateMap[parentInstallmentNo];
+    const subLatestReceivedDate = latestReceivedDateMap[inst.installmentNo] || today;
+
+    const start = new Date(parentLatestReceivedDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(subLatestReceivedDate);
+    end.setHours(0, 0, 0, 0);
+
+    const dueDays = Math.floor((end - start) / MS_IN_A_DAY);
+
+    return {
         ...inst,
         totalReceived,
         balance,
         interest,
-        commitmentDate: inst.isSubInstallment ? inst.commitmentDate || latestReceivedDateMap[inst.installmentNo] : inst.commitmentDate,
-      };
-    }));
+        dueDays: dueDays >= 0 ? dueDays : 0,
+        commitmentDate: inst.commitmentDate || subLatestReceivedDate || parentLatestReceivedDate,
+    };
+} else {
+    const installmentLatestReceivedDate = latestReceivedDateMap[inst.installmentNo] || today;
+    interest = calculateInterest(balance, inst.dueDate, installmentLatestReceivedDate);
+
+    const dueDays = Math.ceil((today - new Date(inst.dueDate)) / (1000 * 60 * 60 * 24));
+
+    return {
+      ...inst,
+      totalReceived,
+      balance,
+      interest,
+      dueDays: dueDays >= 0 ? dueDays : 0,
+      commitmentDate: inst.commitmentDate || installmentLatestReceivedDate,
+    };
+  }
+}));
+
 
     // Sort installments: parents followed by sub-installments
     const sortedInstallments = installmentsWithReceived.sort((a, b) => {
@@ -307,10 +390,88 @@ exports.getEMIByBookingId = async (req, res) => {
   }
 };
 
+
+
+
+// GET: /api/emi/pending-installments
+exports.getPendingInstallments = async (req, res) => {
+  try {
+    // Optional: Add filters if needed in query
+    const { startDate, endDate, searchTerm } = req.query;
+
+    // Fetch all EMIs with pending installments
+    const emis = await EMI.find({
+      "installments.paid": false
+    }).populate("bookingId", "clientName clientMobile taskId");
+
+    let pendingInstallments = [];
+
+    for (const emi of emis) {
+      const booking = emi.bookingId;
+      for (const inst of emi.installments) {
+        if (!inst.paid) {
+          // Get total received for this installment
+          const payments = await PaymentReconciliation.aggregate([
+            { $match: { emiId: emi._id, installmentNo: inst.installmentNo } },
+            { $group: { _id: null, totalReceived: { $sum: "$todayReceiving" } } }
+          ]);
+          const totalReceived = payments[0]?.totalReceived || 0;
+          const balance = inst.amount - totalReceived;
+
+          const installmentData = {
+            bookingId: emi.bookingId._id,
+            clientId: booking.clientName || "N/A",
+            mobile: booking.clientMobile || "N/A",
+            taskId: booking.taskId,
+            emiNo: inst.installmentNo,
+            installmentAmount: inst.amount,
+            amountReceived: totalReceived,
+            balance,
+            dueDate: inst.dueDate ? inst.dueDate.toISOString().split("T")[0] : null,
+          };
+
+          pendingInstallments.push(installmentData);
+        }
+      }
+    }
+
+    // Apply optional filtering
+    if (startDate || endDate) {
+      pendingInstallments = pendingInstallments.filter(inst => {
+        if (!inst.dueDate) return false;
+        const due = new Date(inst.dueDate);
+        const start = startDate ? new Date(startDate) : null;
+        const endD = endDate ? new Date(endDate) : null;
+        return (!start || due >= start) && (!endD || due <= endD);
+      });
+    }
+
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      pendingInstallments = pendingInstallments.filter(inst =>
+        inst.clientId.toLowerCase().includes(lower) ||
+        inst.mobile.includes(lower) ||
+        (inst.dueDate && inst.dueDate.includes(lower))
+      );
+    }
+
+    res.json({
+      success: true,
+      count: pendingInstallments.length,
+      pendingInstallments,
+    });
+  } catch (error) {
+    console.error("Error fetching pending installments:", error);
+    res.status(500).json({ success: false, message: "Server error while fetching pending installments." });
+  }
+};
+
+
 module.exports = {
   createEMI: exports.createEMI,
   updateEMI: exports.updateEMI,
   getEMIByBookingId: exports.getEMIByBookingId,
+    getPendingInstallments: exports.  getPendingInstallments,
 };
 
 

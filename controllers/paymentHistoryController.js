@@ -42,7 +42,7 @@ exports.getPaymentHistory = async (req, res) => {
 
     const paymentHistory = await PaymentHistory.find(query)
       .populate("bookingId")
-      .sort({ receivingDate: -1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

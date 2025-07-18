@@ -38,20 +38,47 @@ exports.getAllBookings = async (req, res) => {
 };
 
 // Update booking status (Cancel / Active)
+// exports.updateBookingStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { status, remark } = req.body;
+//     const updatedBooking = await Booking.findByIdAndUpdate(
+//       id,
+//       { status },
+//       { new: true }
+//     );
+//     res.status(200).json(updatedBooking);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+// Update booking status (Cancel / Active / Rejected with remark)
 exports.updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, remark } = req.body;
+
+    const updateFields = { status };
+
+    // Save remark only if status is 'rejected' in any case
+    if (status?.toLowerCase() === 'rejected' && remark) {
+      updateFields.remark = remark;
+    }
+
     const updatedBooking = await Booking.findByIdAndUpdate(
       id,
-      { status },
+      updateFields,
       { new: true }
     );
+
     res.status(200).json(updatedBooking);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.deleteBooking = async (req, res) => {
   try {

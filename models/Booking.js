@@ -18,7 +18,7 @@ const bookingSchema = new mongoose.Schema({
   enum: ["pending", "active", "rejected"],
   default: "pending",
 },
-
+remark:{type:String },
   taskId: { type: String, required: true, unique: true }, // 👈 added
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // <-- added
 }, { timestamps: true });
