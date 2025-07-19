@@ -2,6 +2,7 @@
 
 const Booking = require("../models/Booking");
 const Payment = require("../models/Payment");
+const EMI = require("../models/EMI");
 
 exports.receivePayment = async (req, res) => {
   try {
@@ -87,13 +88,20 @@ exports.getPaymentsByTaskId = async (req, res) => {
 };
 
 
+
 exports.getFullyReceivedPaymentType2 = async (req, res) => {
   try {
-    // Step 1: Get all bookings
-    const bookings = await Booking.find();
+    // Step 1: Get bookingIds that already have EMIs
+    const bookingIdsWithEMIs = await EMI.distinct("bookingId");
+
+    // Step 2: Get bookings without EMIs
+    const bookings = await Booking.find({
+      _id: { $nin: bookingIdsWithEMIs }
+    });
 
     const fullyReceivedBookings = [];
 
+    // Step 3: Check paymentType2 fully received or zero
     for (const booking of bookings) {
       if (booking.paymentType2 === 0) {
         // paymentType2 is zero, include directly
@@ -101,7 +109,12 @@ exports.getFullyReceivedPaymentType2 = async (req, res) => {
       } else {
         // Calculate total received paymentType2 payments
         const payments = await Payment.aggregate([
-          { $match: { bookingId: booking._id, paymentType: "Payment Type 2" } },
+          { 
+            $match: { 
+              bookingId: booking._id, 
+              paymentType: "Payment Type 2" 
+            } 
+          },
           {
             $group: {
               _id: null,
@@ -131,6 +144,111 @@ exports.getFullyReceivedPaymentType2 = async (req, res) => {
     });
   }
 };
+
+
+exports.getFullyReceivedPaymentType2WithEMICreated = async (req, res) => {
+  try {
+    // Step 1: Get bookingIds that already have EMIs
+    const bookingIdsWithEMIs = await EMI.distinct("bookingId");
+
+    // Step 2: Get bookings WITH EMIs only
+    const bookings = await Booking.find({
+      _id: { $in: bookingIdsWithEMIs }
+    });
+
+    const fullyReceivedBookings = [];
+
+    // Step 3: Check paymentType2 fully received or zero
+    for (const booking of bookings) {
+      if (booking.paymentType2 === 0) {
+        // paymentType2 is zero, include directly
+        fullyReceivedBookings.push(booking);
+      } else {
+        // Calculate total received paymentType2 payments
+        const payments = await Payment.aggregate([
+          { 
+            $match: { 
+              bookingId: booking._id, 
+              paymentType: "Payment Type 2" 
+            } 
+          },
+          {
+            $group: {
+              _id: null,
+              totalReceived: { $sum: "$todayReceiving" },
+            },
+          },
+        ]);
+
+        const totalReceived = payments[0]?.totalReceived || 0;
+
+        if (totalReceived >= booking.paymentType2) {
+          fullyReceivedBookings.push(booking);
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      count: fullyReceivedBookings.length,
+      data: fullyReceivedBookings,
+    });
+  } catch (error) {
+    console.error("Error in getFullyReceivedPaymentType2WithEMICreated:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching fully received Payment Type 2 bookings with EMI created",
+    });
+  }
+};
+
+
+
+
+// exports.getFullyReceivedPaymentType2 = async (req, res) => {
+//   try {
+//     // Step 1: Get all bookings
+//     const bookings = await Booking.find();
+
+//     const fullyReceivedBookings = [];
+
+//     for (const booking of bookings) {
+//       if (booking.paymentType2 === 0) {
+//         // paymentType2 is zero, include directly
+//         fullyReceivedBookings.push(booking);
+//       } else {
+//         // Calculate total received paymentType2 payments
+//         const payments = await Payment.aggregate([
+//           { $match: { bookingId: booking._id, paymentType: "Payment Type 2" } },
+//           {
+//             $group: {
+//               _id: null,
+//               totalReceived: { $sum: "$todayReceiving" },
+//             },
+//           },
+//         ]);
+
+//         const totalReceived = payments[0]?.totalReceived || 0;
+
+//         if (totalReceived >= booking.paymentType2) {
+//           fullyReceivedBookings.push(booking);
+//         }
+//       }
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       count: fullyReceivedBookings.length,
+//       data: fullyReceivedBookings,
+//     });
+//   } catch (error) {
+//     console.error("Error in getFullyReceivedPaymentType2:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error while fetching fully received Payment Type 2 bookings",
+//     });
+//   }
+// };
 
 
 

@@ -402,7 +402,7 @@ exports.getPendingInstallments = async (req, res) => {
     // Fetch all EMIs with pending installments
     const emis = await EMI.find({
       "installments.paid": false
-    }).populate("bookingId", "clientName clientMobile taskId");
+    }).populate("bookingId", "clientName mobile taskId");
 
     let pendingInstallments = [];
 
@@ -421,7 +421,7 @@ exports.getPendingInstallments = async (req, res) => {
           const installmentData = {
             bookingId: emi.bookingId._id,
             clientId: booking.clientName || "N/A",
-            mobile: booking.clientMobile || "N/A",
+            mobile: booking.mobile || "N/A",
             taskId: booking.taskId,
             emiNo: inst.installmentNo,
             installmentAmount: inst.amount,
