@@ -9,8 +9,11 @@ const emiRoutes = require("./routes/emiRoutes");
 const paymentReconciliationRoutes = require("./routes/paymentReconciliationRoutes");
 const paymentHistoryRoutes = require("./routes/paymentHistoryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const { upload } = require("./middlewares/multerConfig")
 
-// const uploadRoutes = require('./routes/uploadRoutes');
+const nocRoutes = require("./routes/nocRoutes");
+
+const uploadRoutes = require('./routes/uploadRoutes');
 const cors = require("cors"); // Import the CORS package
 
 // dotenv.config();
@@ -44,10 +47,13 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/emi", emiRoutes);
 app.use("/api/emi-receive", paymentReconciliationRoutes);
 app.use("/api/payment-history",paymentHistoryRoutes);
-// app.use("/api/upload", uploadRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Routes
 app.use('/api/projects', projectRoutes);
+
+app.use("/api/noc",nocRoutes );
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>

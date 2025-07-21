@@ -149,8 +149,8 @@ exports.updateBooking = async (req, res) => {
     if (totalDealCost === undefined || isNaN(totalDealCost)) {
       return res.status(400).json({ message: "Total Deal Cost is required and must be a number." });
     }
-    if (!floor || floor.toString().trim() === "") {
-  return res.status(400).json({ message: "Floor is required and must be a non-empty string." });
+    if (!tower || tower.toString().trim() === "") {
+  return res.status(400).json({ message: "Tower is required and must be a non-empty string." });
 }
 
 
@@ -172,7 +172,7 @@ exports.updateBooking = async (req, res) => {
       paymentType1: Number(paymentType1),
       paymentType2: Number(paymentType2),
       totalDealCost: Number(totalDealCost),
-      floor: floor.toString().trim(),
+      tower: tower.toString().trim(),
 
       taskId,
       ...rest,
