@@ -153,7 +153,8 @@ exports.getFullyReceivedPaymentType2WithEMICreated = async (req, res) => {
 
     // Step 2: Get bookings WITH EMIs only
     const bookings = await Booking.find({
-      _id: { $in: bookingIdsWithEMIs }
+      _id: { $in: bookingIdsWithEMIs },
+      nocGranted: false
     });
 
     const fullyReceivedBookings = [];
