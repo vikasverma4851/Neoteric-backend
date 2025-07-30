@@ -76,6 +76,11 @@ exports.getBookingsForNOC = async (req, res) => {
         mobile: booking.mobile || "",
         projectType: booking.projectType,
         tower: booking.tower,
+        ibms: booking.ibms,
+        clubCharges: booking.clubCharges,
+        externalElectrification: booking.externalElectrification,
+        legalCharges: booking.legalCharges,
+        
       };
     });
 

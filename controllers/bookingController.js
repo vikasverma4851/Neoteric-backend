@@ -1,5 +1,4 @@
-
-const Booking = require('../models/Booking');
+const Booking = require("../models/Booking");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -9,7 +8,7 @@ exports.createBooking = async (req, res) => {
       clientName,
       mobile,
       salesExecutiveName,
-      unit,
+      flatNo,
       paymentType1,
       paymentType2,
       totalDealCost,
@@ -19,23 +18,16 @@ exports.createBooking = async (req, res) => {
       panNumber,
       panCopy,
       coAllotteeAadharCopy,
-
-coAllotteeAadharNumber,
-
-coAllotteePanCopy,
-coAllotteePanNumber,
-
-
-coAllotteeDob,
-
-coAllotteeMobile,
-
-coAllotteeEmail,
-
-coAllotteeProfession,
-coAllotteeAge,
-coAllotteeAddress,
-
+      coAllotteeAadharNumber,
+      coAllotteePanCopy,
+      coAllotteePanNumber,
+      coAllotteeDob,
+      coAllotteeMobile,
+      coAllotteeEmail,
+      coAllotteeProfession,
+      coAllotteeAge,
+      coAllotteeAddress,
+     
 
       _id, // Destructure _id but ignore it
       ...rest
@@ -44,69 +36,74 @@ coAllotteeAddress,
     const createdBy = req.user._id;
 
     // Validate required fields
-    if (!projectName || projectName.trim() === '') {
-      return res.status(400).json({ message: 'Project Name is required.' });
+    if (!projectName || projectName.trim() === "") {
+      return res.status(400).json({ message: "Project Name is required." });
     }
-    if (!projectType || projectType.trim() === '') {
-      return res.status(400).json({ message: 'Project Type is required.' });
+    if (!projectType || projectType.trim() === "") {
+      return res.status(400).json({ message: "Project Type is required." });
     }
-    if (!clientName || clientName.trim() === '') {
-      return res.status(400).json({ message: 'Client Name is required.' });
+    if (!clientName || clientName.trim() === "") {
+      return res.status(400).json({ message: "Client Name is required." });
     }
-    if (!mobile || mobile.trim() === '') {
-      return res.status(400).json({ message: 'Mobile is required.' });
+    if (!mobile || mobile.trim() === "") {
+      return res.status(400).json({ message: "Mobile is required." });
     }
-    if (!salesExecutiveName || salesExecutiveName.trim() === '') {
-      return res.status(400).json({ message: 'Sales Executive Name is required.' });
+    if (!salesExecutiveName || salesExecutiveName.trim() === "") {
+      return res
+        .status(400)
+        .json({ message: "Sales Executive Name is required." });
     }
-    if (!unit || unit.trim() === '') {
-      return res.status(400).json({ message: 'Unit is required.' });
+    if (!flatNo || flatNo.trim() === "") {
+      return res.status(400).json({ message: "FlatNo or Plot  is required." });
     }
     if (paymentType1 === undefined || isNaN(paymentType1)) {
-      return res.status(400).json({ message: 'Payment Type 1 is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Payment Type 1 is required and must be a number." });
     }
     if (paymentType2 === undefined || isNaN(paymentType2)) {
-      return res.status(400).json({ message: 'Payment Type 2 is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Payment Type 2 is required and must be a number." });
     }
     if (totalDealCost === undefined || isNaN(totalDealCost)) {
-      return res.status(400).json({ message: 'Total Deal Cost is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Total Deal Cost is required and must be a number." });
     }
 
     // Generate clean, consistent taskId
-    const taskId = `${projectName.trim()}/${projectType.trim()}/${unit.trim()}/${clientName.trim()}`;
+    const taskId = `${projectName.trim()}/${projectType.trim()}/${flatNo.trim()}/${clientName.trim()}`;
 
     // Sanitize co-allottee data
     const sanitizedCoAllottees = {
-      dob: coAllotteeDob?.trim() || '',
-      age: coAllotteeAge
-?.trim() || '',
-      profession: coAllotteeProfession
-?.trim() || '',
-      panNumber:coAllotteePanNumber
-?.trim() || '',
-      aadharNumber: coAllotteeAadharNumber.trim() || '',
-      panCopy: coAllotteePanCopy?.trim() || '',
-      aadharCopy:coAllotteeAadharCopy.trim() || '',
-      email: coAllotteeEmail?.trim() || '',
-      mobile: coAllotteeMobile?.trim() || '',
-      address: coAllotteeAddress?.trim() || '',
+      dob: coAllotteeDob?.trim() || "",
+      age: coAllotteeAge?.trim() || "",
+      profession: coAllotteeProfession?.trim() || "",
+      panNumber: coAllotteePanNumber?.trim() || "",
+      aadharNumber: coAllotteeAadharNumber?.trim() || "",
+      panCopy: coAllotteePanCopy?.trim() || "",
+      aadharCopy: coAllotteeAadharCopy?.trim() || "",
+      email: coAllotteeEmail?.trim() || "",
+      mobile: coAllotteeMobile?.trim() || "",
+      address: coAllotteeAddress?.trim() || "",
     };
 
     const booking = new Booking({
-      projectName: projectName.trim(),
-      projectType: projectType.trim(),
-      clientName: clientName.trim(),
-      mobile: mobile.trim(),
-      salesExecutiveName: salesExecutiveName.trim(),
-      unit: unit.trim(),
+      projectName: projectName?.trim(),
+      projectType: projectType?.trim(),
+      clientName: clientName?.trim(),
+      mobile: mobile?.trim(),
+      salesExecutiveName: salesExecutiveName?.trim(),
+      flatNo: flatNo?.trim(),
       paymentType1: Number(paymentType1),
       paymentType2: Number(paymentType2),
       totalDealCost: Number(totalDealCost),
-      tower: tower?.trim() || 'N/A',
-      aadharNumber: aadharNumber?.trim() || '',
-      aadharCopy: aadharCopy?.trim() || '',
-      panNumber: panNumber?.trim() || '',
-      panCopy: panCopy?.trim() || '',
+      tower: tower?.trim() || "N/A",
+      aadharNumber: aadharNumber?.trim() || "",
+      aadharCopy: aadharCopy?.trim() || "",
+      panNumber: panNumber?.trim() || "",
+      panCopy: panCopy?.trim() || "",
       coAllottees: sanitizedCoAllottees,
       taskId,
       createdBy,
@@ -117,7 +114,12 @@ coAllotteeAddress,
     res.status(201).json(booking);
   } catch (error) {
     if (error.code === 11000 && error.keyPattern && error.keyPattern.taskId) {
-      return res.status(400).json({ message: 'Duplicate taskId detected. Please check projectName, projectType, unit, and clientName for uniqueness.' });
+      return res
+        .status(400)
+        .json({
+          message:
+            "Duplicate taskId detected. Please check projectName, projectType, flatNo or PlotNO, and clientName for uniqueness.",
+        });
     }
     res.status(400).json({ message: error.message });
   }
@@ -137,20 +139,26 @@ exports.updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status, remark } = req.body;
 
-    const allowedStatuses = ['pending', 'active', 'rejected'];
+    const allowedStatuses = ["pending", "active", "rejected"];
     if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: `Status must be one of: ${allowedStatuses.join(', ')}` });
+      return res
+        .status(400)
+        .json({
+          message: `Status must be one of: ${allowedStatuses.join(", ")}`,
+        });
     }
 
     const updateFields = { status };
-    if (status.toLowerCase() === 'rejected' && remark) {
+    if (status.toLowerCase() === "rejected" && remark) {
       updateFields.remark = remark.trim();
     }
 
-    const updatedBooking = await Booking.findByIdAndUpdate(id, updateFields, { new: true });
+    const updatedBooking = await Booking.findByIdAndUpdate(id, updateFields, {
+      new: true,
+    });
 
     if (!updatedBooking) {
-      return res.status(404).json({ message: 'Booking not found.' });
+      return res.status(404).json({ message: "Booking not found." });
     }
 
     res.status(200).json(updatedBooking);
@@ -166,11 +174,11 @@ exports.deleteBooking = async (req, res) => {
     const deletedBooking = await Booking.findByIdAndDelete(id);
 
     if (!deletedBooking) {
-      return res.status(404).json({ message: 'Booking not found.' });
+      return res.status(404).json({ message: "Booking not found." });
     }
 
     res.status(200).json({
-      message: 'Booking deleted successfully.',
+      message: "Booking deleted successfully.",
       deletedBooking,
     });
   } catch (error) {
@@ -187,7 +195,7 @@ exports.updateBooking = async (req, res) => {
       clientName,
       mobile,
       salesExecutiveName,
-      unit,
+      flatNo,
       paymentType1,
       paymentType2,
       totalDealCost,
@@ -196,99 +204,107 @@ exports.updateBooking = async (req, res) => {
       aadharCopy,
       panNumber,
       panCopy,
-        coAllotteeAadharCopy,
+      coAllotteeAadharCopy,
 
-coAllotteeAadharNumber,
+      coAllotteeAadharNumber,
 
-coAllotteePanCopy,
-coAllotteePanNumber,
+      coAllotteePanCopy,
+      coAllotteePanNumber,
 
+      coAllotteeDob,
 
-coAllotteeDob,
+      coAllotteeMobile,
 
-coAllotteeMobile,
+      coAllotteeEmail,
 
-coAllotteeEmail,
-
-coAllotteeProfession,
-coAllotteeAge,
-coAllotteeAddress,
+      coAllotteeProfession,
+      coAllotteeAge,
+      coAllotteeAddress,
 
       status,
       ...rest
     } = req.body;
 
     // Validate required fields
-    if (!projectName || projectName.trim() === '') {
-      return res.status(400).json({ message: 'Project Name is required.' });
+    if (!projectName || projectName.trim() === "") {
+      return res.status(400).json({ message: "Project Name is required." });
     }
-    if (!projectType || projectType.trim() === '') {
-      return res.status(400).json({ message: 'Project Type is required.' });
+    if (!projectType || projectType.trim() === "") {
+      return res.status(400).json({ message: "Project Type is required." });
     }
-    if (!clientName || clientName.trim() === '') {
-      return res.status(400).json({ message: 'Client Name is required.' });
+    if (!clientName || clientName.trim() === "") {
+      return res.status(400).json({ message: "Client Name is required." });
     }
-    if (!mobile || mobile.trim() === '') {
-      return res.status(400).json({ message: 'Mobile is required.' });
+    if (!mobile || mobile.trim() === "") {
+      return res.status(400).json({ message: "Mobile is required." });
     }
-    if (!salesExecutiveName || salesExecutiveName.trim() === '') {
-      return res.status(400).json({ message: 'Sales Executive Name is required.' });
+    if (!salesExecutiveName || salesExecutiveName.trim() === "") {
+      return res
+        .status(400)
+        .json({ message: "Sales Executive Name is required." });
     }
-    if (!unit || unit.trim() === '') {
-      return res.status(400).json({ message: 'Unit is required.' });
+    if (!flatNo || flatNo.trim() === "") {
+      return res.status(400).json({ message: "flatNo or Plot  is required." });
     }
     if (paymentType1 === undefined || isNaN(paymentType1)) {
-      return res.status(400).json({ message: 'Payment Type 1 is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Payment Type 1 is required and must be a number." });
     }
     if (paymentType2 === undefined || isNaN(paymentType2)) {
-      return res.status(400).json({ message: 'Payment Type 2 is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Payment Type 2 is required and must be a number." });
     }
     if (totalDealCost === undefined || isNaN(totalDealCost)) {
-      return res.status(400).json({ message: 'Total Deal Cost is required and must be a number.' });
+      return res
+        .status(400)
+        .json({ message: "Total Deal Cost is required and must be a number." });
     }
 
     // Validate status if provided
-    const allowedStatuses = ['pending', 'active', 'rejected'];
+    const allowedStatuses = ["pending", "active", "rejected"];
     if (status && !allowedStatuses.includes(status)) {
-      return res.status(400).json({ message: `Status must be one of: ${allowedStatuses.join(', ')}` });
+      return res
+        .status(400)
+        .json({
+          message: `Status must be one of: ${allowedStatuses.join(", ")}`,
+        });
     }
 
     // Generate taskId
-    const taskId = `${projectName.trim()}/${projectType.trim()}/${unit.trim()}/${clientName.trim()}`;
+    const taskId = `${projectName.trim()}/${projectType.trim()}/${flatNo.trim()}/${clientName.trim()}`;
 
     // Sanitize co-allottee data
     // Sanitize co-allottee data
     const sanitizedCoAllottees = {
-      dob: coAllotteeDob?.trim() || '',
-      age: coAllotteeAge
-?.trim() || '',
-      profession: coAllotteeProfession
-?.trim() || '',
-      panNumber:coAllotteePanNumber
-?.trim() || '',
-      aadharNumber: coAllotteeAadharNumber.trim() || '',
-      panCopy: coAllotteePanCopy?.trim() || '',
-      aadharCopy:coAllotteeAadharCopy.trim() || '',
-      email: coAllotteeEmail?.trim() || '',
-      mobile: coAllotteeMobile?.trim() || '',
-      address: coAllotteeAddress?.trim() || '',
+      dob: coAllotteeDob?.trim() || "",
+      age: coAllotteeAge?.trim() || "",
+      profession: coAllotteeProfession?.trim() || "",
+      panNumber: coAllotteePanNumber?.trim() || "",
+      aadharNumber: coAllotteeAadharNumber?.trim() || "",
+      panCopy: coAllotteePanCopy?.trim() || "",
+      aadharCopy: coAllotteeAadharCopy?.trim() || "",
+      email: coAllotteeEmail?.trim() || "",
+      mobile: coAllotteeMobile?.trim() || "",
+      address: coAllotteeAddress?.trim() || "",
     };
 
     const updateData = {
-      projectName: projectName.trim(),
-      projectType: projectType.trim(),
-      clientName: clientName.trim(),
-      mobile: mobile.trim(),
-      salesExecutiveName: salesExecutiveName.trim(),
-      unit: unit.trim(),
+      projectName: projectName?.trim(),
+      projectType: projectType?.trim(),
+      clientName: clientName?.trim(),
+      mobile: mobile?.trim(),
+      salesExecutiveName: salesExecutiveName?.trim(),
+      flatNo: flatNo?.trim(),
       paymentType1: Number(paymentType1),
       paymentType2: Number(paymentType2),
       totalDealCost: Number(totalDealCost),
-      tower: tower?.trim() || 'N/A',
-      aadharNumber: aadharNumber?.trim() || '',
-      aadharCopy: aadharCopy?.trim() || '',
-      panNumber: panNumber?.trim() || '',
-      panCopy: panCopy?.trim() || '',
+      tower: tower?.trim() || "N/A",
+      aadharNumber: aadharNumber?.trim() || "",
+      aadharCopy: aadharCopy?.trim() || "",
+      panNumber: panNumber?.trim() || "",
+      panCopy: panCopy?.trim() || "",
       coAllottees: sanitizedCoAllottees,
       taskId,
       ...rest,
@@ -298,27 +314,28 @@ coAllotteeAddress,
       updateData.status = status;
     }
 
-    const updatedBooking = await Booking.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+    const updatedBooking = await Booking.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedBooking) {
-      return res.status(404).json({ message: 'Booking not found.' });
+      return res.status(404).json({ message: "Booking not found." });
     }
 
     res.status(200).json(updatedBooking);
   } catch (error) {
     if (error.code === 11000 && error.keyPattern && error.keyPattern.taskId) {
-      return res.status(400).json({ message: 'Duplicate taskId detected. Please check projectName, projectType, unit, and clientName for uniqueness.' });
+      return res
+        .status(400)
+        .json({
+          message:
+            "Duplicate taskId detected. Please check projectName, projectType, FlatNo or PlotNo, and clientName for uniqueness.",
+        });
     }
     res.status(500).json({ message: error.message });
   }
 };
-
-
-
-
-
-
-
 
 // const Booking = require("../models/Booking");
 
@@ -327,7 +344,6 @@ coAllotteeAddress,
 //     const { projectName, projectType, clientName, unit, ...rest } = req.body;
 
 //     const createdBy = req.user._id;
-
 
 //     // Generate clean, consistent taskId
 //     const taskId = `${projectName.trim()}/${projectType.trim()}/${unit.trim()}/${clientName.trim()}`;
@@ -341,7 +357,7 @@ coAllotteeAddress,
 //       createdBy,
 //         ...rest,
 //     });
-    
+
 //     await booking.save();
 //     res.status(201).json(booking);
 //   } catch (error) {
@@ -375,7 +391,6 @@ coAllotteeAddress,
 // //   }
 // // };
 
-
 // // Update booking status (Cancel / Active / Rejected with remark)
 // exports.updateBookingStatus = async (req, res) => {
 //   try {
@@ -401,7 +416,6 @@ coAllotteeAddress,
 //   }
 // };
 
-
 // exports.deleteBooking = async (req, res) => {
 //   try {
 //     const { id } = req.params;
@@ -420,10 +434,6 @@ coAllotteeAddress,
 //     res.status(500).json({ message: error.message });
 //   }
 // };
-
-
-
-
 
 // exports.updateBooking = async (req, res) => {
 //   try {
@@ -475,7 +485,6 @@ coAllotteeAddress,
 //   return res.status(400).json({ message: "Tower is required and must be a non-empty string." });
 // }
 
-
 //     // Validate status if provided
 //     const allowedStatuses = ["pending", "active", "rejected"];
 //     if (status && !allowedStatuses.includes(status)) {
@@ -524,5 +533,3 @@ coAllotteeAddress,
 //     res.status(500).json({ message: error.message });
 //   }
 // };
-
-
