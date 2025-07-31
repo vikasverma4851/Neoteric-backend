@@ -80,6 +80,19 @@ exports.getBookingsForNOC = async (req, res) => {
         clubCharges: booking.clubCharges,
         externalElectrification: booking.externalElectrification,
         legalCharges: booking.legalCharges,
+        agreementType: booking.agreementType,
+        developer: booking.developer,
+        maintenanceAgency: booking.maintenanceAgency,
+        earnestMoney: booking.earnestMoney,
+        nonRefundableComponents: booking.nonRefundableComponents,
+        arbitrationLocation: booking.arbitrationLocation,
+        governingAct: booking.governingAct, 
+        projectName: booking.projectName, 
+        flatNo: booking.flatNo, 
+        clearOtherDetails: booking.clearOtherDetails, 
+        clearBankDetails: booking.clearBankDetails, 
+        address: booking.address, 
+        
         
       };
     });
@@ -170,3 +183,31 @@ exports.getNOCHistory = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch NOC history", error: error.message });
   }
 };
+
+// PUT /api/noc/clear-other-details
+exports.clearOtherDetails = async (req, res) => {
+  try {
+    const { bookingId, bankDetails } = req.body;
+
+    if (!bookingId || !bankDetails) {
+      return res.status(400).json({ message: "Booking ID and bank details are required." });
+    }
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    booking.clearOtherDetails = true;
+    booking.clearBankDetails = bankDetails;
+
+    await booking.save();
+
+    res.status(200).json({ message: "Other charges cleared and bank details saved." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update booking details.", error: error.message });
+  }
+};
+

@@ -89,6 +89,9 @@ const bookingSchema = new mongoose.Schema({
   nocGrantedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   nocRemarks: { type: String, trim: true },
   proceedToNoDue: { type: Boolean, default: false },
+  clearOtherDetails :{type:Boolean, default:false},
+  clearBankDetails:{type:String}
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Booking', bookingSchema);
