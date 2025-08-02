@@ -1,4 +1,5 @@
 const Booking = require("../models/Booking");
+const BookingAmount = require("../models/BookingAmount")
 
 exports.createBooking = async (req, res) => {
   try {
@@ -27,11 +28,16 @@ exports.createBooking = async (req, res) => {
       coAllotteeProfession,
       coAllotteeAge,
       coAllotteeAddress,
+      balanceBookingAmt,
+      totalBookingAmt,
      
 
       _id, // Destructure _id but ignore it
       ...rest
     } = req.body;
+
+    console.log('body',req.body);
+    
 
     const createdBy = req.user._id;
 
@@ -72,6 +78,17 @@ exports.createBooking = async (req, res) => {
         .json({ message: "Total Deal Cost is required and must be a number." });
     }
 
+    if (totalBookingAmt === undefined || isNaN(totalBookingAmt) || Number(totalBookingAmt) <= 0) {
+      return res.status(400).json({ message: "Total Booking Amount is required and must be a positive number." });
+    }
+    // balanceBookingAmt should equal totalBookingAmt initially if no payments received
+    if (balanceBookingAmt === undefined || isNaN(balanceBookingAmt) || Number(balanceBookingAmt) < 0) {
+      return res.status(400).json({ message: "Balance Booking Amount is required and must be a non-negative number." });
+    }
+    if (Number(balanceBookingAmt) > Number(totalBookingAmt)) {
+      return res.status(400).json({ message: "Balance Booking Amount cannot exceed Total Booking Amount." });
+    }
+
     // Generate clean, consistent taskId
     const taskId = `${projectName.trim()}/${projectType.trim()}/${flatNo.trim()}/${clientName.trim()}`;
 
@@ -105,6 +122,8 @@ exports.createBooking = async (req, res) => {
       panNumber: panNumber?.trim() || "",
       panCopy: panCopy?.trim() || "",
       coAllottees: sanitizedCoAllottees,
+      totalBookingAmt: totalBookingAmt.toString().trim(),
+      balanceBookingAmt: balanceBookingAmt.toString().trim(),
       taskId,
       createdBy,
       ...rest,
@@ -220,6 +239,8 @@ exports.updateBooking = async (req, res) => {
       coAllotteeProfession,
       coAllotteeAge,
       coAllotteeAddress,
+       totalBookingAmt,
+      balanceBookingAmt,
 
       status,
       ...rest
@@ -306,6 +327,8 @@ exports.updateBooking = async (req, res) => {
       panNumber: panNumber?.trim() || "",
       panCopy: panCopy?.trim() || "",
       coAllottees: sanitizedCoAllottees,
+       totalBookingAmt,
+      balanceBookingAmt,
       taskId,
       ...rest,
     };
@@ -336,6 +359,92 @@ exports.updateBooking = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+exports.receiveBookingAmount = async (req, res) => {
+  try {
+    const { bookingId, receivingDate, transferType, bankDetails, amount } = req.body;
+
+    // Validate required fields
+    if (!bookingId) {
+      return res.status(400).json({ message: 'Booking ID is required.' });
+    }
+    if (!receivingDate) {
+      return res.status(400).json({ message: 'Receiving date is required.' });
+    }
+    if (!transferType) {
+      return res.status(400).json({ message: 'Transfer type is required.' });
+    }
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required.' });
+    }
+    if (transferType === 'Bank Account' && (!bankDetails || bankDetails.trim() === '')) {
+      return res.status(400).json({ message: 'Bank details are required for Bank Account transfers.' });
+    }
+
+    // Find the booking
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+    if (booking.status !== 'active') {
+      return res.status(400).json({ message: 'Booking is not active.' });
+    }
+
+    // Calculate total received amount for this booking
+    const existingAmounts = await BookingAmount.find({ bookingId });
+    const totalReceived = existingAmounts.reduce((sum, record) => sum + record.amount, 0);
+    const newTotalReceived = totalReceived + Number(amount);
+
+    // Check if the new amount exceeds totalBookingAmt
+    const totalBookingAmt = Number(booking.totalBookingAmt) || 0;
+    if (newTotalReceived > totalBookingAmt) {
+      return res.status(400).json({ message: 'Received amount exceeds total booking amount.' });
+    }
+
+    // Create new booking amount record
+    const newBookingAmount = new BookingAmount({
+      bookingId,
+      receivingDate: new Date(receivingDate),
+      transferType,
+      bankDetails: bankDetails?.trim() || '',
+      amount: Number(amount),
+    });
+
+    await newBookingAmount.save();
+
+    // Update booking's balanceBookingAmt
+    const balanceBookingAmt = booking?.balanceBookingAmt - Number(amount);
+    await Booking.findByIdAndUpdate(
+      bookingId,
+      { balanceBookingAmt: balanceBookingAmt.toString() },
+      { new: true }
+    );
+
+    res.status(201).json(newBookingAmount);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getAllBookingAmounts = async (req, res) => {
+  try {
+    const bookingAmounts = await BookingAmount?.find()
+      .populate({  
+        path: 'bookingId',
+    select: 'taskId' 
+  }) // only select taskId)
+      .sort({ timestamp: -1 });
+    res.status(200).json(bookingAmounts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 // const Booking = require("../models/Booking");
 

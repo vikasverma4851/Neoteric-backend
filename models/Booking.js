@@ -42,6 +42,8 @@ const bookingSchema = new mongoose.Schema({
   gstOnBase: { type: String, trim: true },
   totalBaseGst: { type: String, trim: true },
   bookingAmount: { type: String, trim: true },
+  balanceBookingAmt: { type: String, trim: true },
+  totalBookingAmt: { type: String, trim: true },   // **
   duePayment: { type: String, trim: true },
   maintenanceOtherCharges: { type: String, trim: true },
   totalAmountAllIn: { type: String, trim: true },
@@ -94,7 +96,7 @@ const bookingSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model('Booking', bookingSchema);
+module.exports = mongoose.model('Booking', bookingSchema);   
 
 
 

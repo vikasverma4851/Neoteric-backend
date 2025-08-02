@@ -103,7 +103,7 @@ exports.getFullyReceivedPaymentType2 = async (req, res) => {
 
     // Step 3: Check paymentType2 fully received or zero
     for (const booking of bookings) {
-      if (booking.paymentType2 === 0) {
+      if (Number(booking.paymentType2) === 0 && Number(booking?.balanceBookingAmt) === 0 ) {
         // paymentType2 is zero, include directly
         fullyReceivedBookings.push(booking);
       } else {
@@ -125,7 +125,7 @@ exports.getFullyReceivedPaymentType2 = async (req, res) => {
 
         const totalReceived = payments[0]?.totalReceived || 0;
 
-        if (totalReceived >= booking.paymentType2) {
+        if (totalReceived >= Number(booking.paymentType2) && Number(booking?.balanceBookingAmt) === 0) {
           fullyReceivedBookings.push(booking);
         }
       }
