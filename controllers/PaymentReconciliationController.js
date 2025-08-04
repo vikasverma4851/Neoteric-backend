@@ -13,7 +13,7 @@ const calculateInterest = (amount, fromDate, toDate) => {
   const diffTime = to - from;
   const daysLate = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
   const dailyRate = parseFloat((0.02 / 30).toFixed(10));
-  const interest = Number((amount * dailyRate * daysLate).toFixed(2));
+  const interest = Number(Math.round(amount * dailyRate * daysLate));
   console.log({ amount, fromDate, toDate, daysLate, dailyRate, interest });
   return interest;
 };
