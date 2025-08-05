@@ -9,6 +9,7 @@ const emiRoutes = require("./routes/emiRoutes");
 const paymentReconciliationRoutes = require("./routes/paymentReconciliationRoutes");
 const paymentHistoryRoutes = require("./routes/paymentHistoryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const reportRoutes = require("./routes/reportsRoutes");
 const { upload } = require("./middlewares/multerConfig")
 
 const nocRoutes = require("./routes/nocRoutes");
@@ -53,6 +54,7 @@ app.use("/api/upload", uploadRoutes);
 app.use('/api/projects', projectRoutes);
 
 app.use("/api/noc",nocRoutes );
+app.use("/api/reports",reportRoutes );
 
 
 const PORT = process.env.PORT || 5000;
