@@ -212,6 +212,7 @@ exports.getEmiReport = async (req, res) => {
 
 
 
+
 exports.getInstallmentReport = async (req, res) => {
   try {
     const { startDate, endDate, searchTerm } = req.query;
@@ -271,104 +272,57 @@ exports.getInstallmentReport = async (req, res) => {
         },
       },
       {
-        $lookup: {
-          from: "paymentreconciliations",
-          let: { bookingId: "$_id", dueDate: "$emi.installments.dueDate" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$bookingId", "$$bookingId"] },
-                    {
-                      $or: [
-                        {
-                          $and: [
-                            { $ne: ["$receivedDate", null] },
-                            {
-                              $lte: [
-                                { $abs: { $subtract: ["$receivedDate", "$$dueDate"] } },
-                                7 * 24 * 60 * 60 * 1000, // 7 days in ms
-                              ],
-                            },
-                          ],
-                        },
-                        { $eq: ["$receivedDate", null] },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                amtReceived: { $sum: { $toDouble: "$todayReceiving" } },
-                payments: {
-                  $push: {
-                    utr: { $ifNull: ["$utr", "N/A"] },
-                    bankDetails: { $ifNull: ["$bankDetails", "N/A"] },
-                    receivedDate: "$receivedDate",
-                  },
-                },
-              },
-            },
+        $match: {
+          $and: [
+            { "emi.installments.amount": { $gt: 0 } },
+            Object.keys(dateFilter).length > 0
+              ? { "emi.installments.dueDate": dateFilter }
+              : {},
           ],
-          as: "payments",
         },
-      },
-      {
-        $unwind: { path: "$payments", preserveNullAndEmptyArrays: true },
       },
       {
         $project: {
           clientId: "$taskId",
           mobileNo: "$mobile",
           projectName: { $trim: { input: "$projectName" } },
-          installmentNumber: { $add: ["$installmentIndex", 1] },
+          installmentNumber: "$emi.installments.installmentNo",
           installmentAmt: "$emi.installments.amount",
-          amtReceived: { $ifNull: ["$payments.amtReceived", 0] },
+          amtReceived: "$emi.installments.totalReceived",
+          balance: "$emi.installments.balance",
           dueDate: "$emi.installments.dueDate",
-          utr: { $ifNull: [{ $arrayElemAt: ["$payments.payments.utr", 0] }, "N/A"] },
-          bankDetails: { $ifNull: [{ $arrayElemAt: ["$payments.payments.bankDetails", 0] }, "N/A"] },
-          receivingDate: { $ifNull: [{ $arrayElemAt: ["$payments.payments.receivedDate", 0] }, null] },
-          interestAmount: {
-            $cond: {
-              if: {
-                $and: [
-                  { $gt: ["$emi.installments.amount", 0] },
-                  {
-                    $gt: [
-                      { $subtract: ["$emi.installments.amount", { $ifNull: ["$payments.amtReceived", 0] }] },
-                      0,
-                    ],
-                  },
-                  { $lt: ["$emi.installments.dueDate", new Date("2025-08-05")] },
-                ],
-              },
-              then: {
-                $multiply: [
-                  { $subtract: ["$emi.installments.amount", { $ifNull: ["$payments.amtReceived", 0] }] },
-                  { $ifNull: ["$emi.installments.interestRate", 0.12] },
-                  {
-                    $divide: [
-                      { $subtract: [new Date("2025-08-05"), "$emi.installments.dueDate"] },
-                      1000 * 60 * 60 * 24 * 365,
-                    ],
-                  },
-                ],
-              },
-              else: 0,
-            },
+          interest: "$emi.installments.interest",
+          interestReceived: "$emi.installments.totalInterestReceived",
+          interestBalance: {
+            $subtract: [
+              { $ifNull: ["$emi.installments.interest", 0] },
+              { $ifNull: ["$emi.installments.totalInterestReceived", 0] },
+            ],
           },
-        },
-      },
-      {
-        $match: {
-          $and: [
-            { installmentAmt: { $gt: 0 } },
-            dateFilter.$gte || dateFilter.$lte ? { dueDate: dateFilter } : {},
-          ],
+          // status: {
+          //   $cond: {
+          //     if: { $eq: ["$emi.installments.balance", 0] }, // Use balance for status
+          //     then: "Paid",
+          //     else: "Pending",
+          //   },
+          // },
+
+          status: {
+  $cond: {
+    if: {
+      $and: [
+        { $eq: ["$emi.installments.balance", 0] },
+        { $eq: [{ $subtract: ["$emi.installments.interest", "$emi.installments.totalInterestReceived"] }, 0] }
+      ]
+    },
+    then: "Paid",
+    else: "Pending"
+  }
+},
+
+          utr: "N/A",
+          bankDetails: "N/A",
+          receivingDate: null,
         },
       },
       {
@@ -380,13 +334,193 @@ exports.getInstallmentReport = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: installmentData.map((item) => ({
-        ...item,
-        status: item.amtReceived >= item.installmentAmt ? "Paid" : "Pending",
-      })),
+      data: installmentData,
     });
   } catch (error) {
     console.error("Error generating installment report:", error);
-    res.status(500).json({ message: "Server error while generating installment report.", error: error.message });
+    res.status(500).json({
+      message: "Server error while generating installment report.",
+      error: error.message,
+    });
   }
 };
+
+// exports.getInstallmentReport = async (req, res) => {
+//   try {
+//     const { startDate, endDate, searchTerm } = req.query;
+//     const token = req.headers.authorization?.split(" ")[1];
+
+//     if (!token) {
+//       return res.status(401).json({ message: "Authorization token is required." });
+//     }
+
+//     // Define date filter for EMI due dates
+//     const dateFilter = {};
+//     if (startDate) {
+//       dateFilter.$gte = new Date(startDate);
+//     }
+//     if (endDate) {
+//       dateFilter.$lte = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+//     }
+//     console.log("Date filter applied:", dateFilter);
+
+//     // Define search filter
+//     const searchFilter = searchTerm
+//       ? {
+//           $or: [
+//             { projectName: { $regex: searchTerm.trim(), $options: "i" } },
+//             { taskId: { $regex: searchTerm.trim(), $options: "i" } },
+//             { mobile: { $regex: searchTerm.trim(), $options: "i" } },
+//           ],
+//         }
+//       : {};
+//     console.log("Search filter applied:", searchFilter);
+
+//     // Aggregate data
+//     const installmentData = await Booking.aggregate([
+//       {
+//         $match: searchFilter, // Apply search filter at Booking level
+//       },
+//       {
+//         $lookup: {
+//           from: "emis",
+//           localField: "_id",
+//           foreignField: "bookingId",
+//           as: "emi",
+//         },
+//       },
+//       {
+//         $unwind: { path: "$emi", preserveNullAndEmptyArrays: true },
+//       },
+//       {
+//         $match: {
+//           "emi.installments": { $exists: true, $not: { $size: 0 } },
+//         },
+//       },
+//       {
+//         $unwind: {
+//           path: "$emi.installments",
+//           includeArrayIndex: "installmentIndex",
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "paymentreconciliations",
+//           let: { bookingId: "$_id", dueDate: "$emi.installments.dueDate" },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     { $eq: ["$bookingId", "$$bookingId"] },
+//                     {
+//                       $or: [
+//                         {
+//                           $and: [
+//                             { $ne: ["$receivedDate", null] },
+//                             {
+//                               $lte: [
+//                                 { $abs: { $subtract: ["$receivedDate", "$$dueDate"] } },
+                             
+//                                 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+//                               ],
+//                             },
+//                           ],
+//                         },
+//                         { $eq: ["$receivedDate", null] },
+//                       ],
+//                     },
+//                   ],
+//                 },
+//               },
+//             },
+//             {
+//               $group: {
+//                 _id: null,
+//                 amtReceived: { $sum: { $toDouble: "$todayReceiving" } },
+//                 payments: {
+//                   $push: {
+//                     utr: { $ifNull: ["$utr", "N/A"] },
+//                     bankDetails: { $ifNull: ["$bankDetails", "N/A"] },
+//                     receivedDate: "$receivedDate",
+//                   },
+//                 },
+//               },
+//             },
+//           ],
+//           as: "payments",
+//         },
+//       },
+//       {
+//         $unwind: { path: "$payments", preserveNullAndEmptyArrays: true },
+//       },
+//       {
+//         $project: {
+//           clientId: "$taskId",
+//           mobileNo: "$mobile",
+//           projectName: { $trim: { input: "$projectName" } },
+//           installmentNumber: { $add: ["$installmentIndex", 1] },
+//           installmentAmt: "$emi.installments.amount",
+//           amtReceived: { $ifNull: ["$payments.amtReceived", 0] },
+//           dueDate: "$emi.installments.dueDate",
+//           utr: { $ifNull: [{ $arrayElemAt: ["$payments.payments.utr", 0] }, "N/A"] },
+//           bankDetails: { $ifNull: [{ $arrayElemAt: ["$payments.payments.bankDetails", 0] }, "N/A"] },
+//           receivingDate: { $ifNull: [{ $arrayElemAt: ["$payments.payments.receivedDate", 0] }, null] },
+//           interestAmount: {
+//             $cond: {
+//               if: {
+//                 $and: [
+//                   { $gt: ["$emi.installments.amount", 0] },
+//                   {
+//                     $gt: [
+//                       { $subtract: ["$emi.installments.amount", { $ifNull: ["$payments.amtReceived", 0] }] },
+//                       0,
+//                     ],
+//                   },
+//                   { $lt: ["$emi.installments.dueDate", new Date("2025-08-05")] },
+//                 ],
+//               },
+//               then: {
+//                 $multiply: [
+//                   { $subtract: ["$emi.installments.amount", { $ifNull: ["$payments.amtReceived", 0] }] },
+//                   { $ifNull: ["$emi.installments.interestRate", 0.12] },
+//                   {
+//                     $divide: [
+//                       { $subtract: [new Date("2025-08-05"), "$emi.installments.dueDate"] },
+//                       1000 * 60 * 60 * 24 * 365,
+//                     ],
+//                   },
+//                 ],
+//               },
+//               else: 0,
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $match: {
+//           $and: [
+//             { installmentAmt: { $gt: 0 } },
+//             dateFilter.$gte || dateFilter.$lte ? { dueDate: dateFilter } : {},
+//           ],
+//         },
+//       },
+//       {
+//         $sort: { projectName: 1, clientId: 1, dueDate: 1 },
+//       },
+//     ]);
+
+//     console.log("Installment report data:", installmentData);
+
+//     res.status(200).json({
+//       success: true,
+//       data: installmentData.map((item) => ({
+//         ...item,
+//         status: item.amtReceived >= item.installmentAmt ? "Paid" : "Pending",
+//       })),
+//     });
+//   } catch (error) {
+//     console.error("Error generating installment report:", error);
+//     res.status(500).json({ message: "Server error while generating installment report.", error: error.message });
+//   }
+// };
