@@ -36,7 +36,7 @@ exports.createProject = async (req, res) => {
     }
 
     const project = new Project({
-      name,
+      name:name?.trim(),
       projectTypes,
       address: address || '',
       developer: developer || '',

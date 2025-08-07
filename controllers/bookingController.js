@@ -333,9 +333,13 @@ exports.updateBooking = async (req, res) => {
       ...rest,
     };
 
-    if (status) {
-      updateData.status = status;
-    }
+    // if (status) {
+    //   updateData.status = status;
+    // }
+
+    // Always update status to 'pending' on booking update
+updateData.status = "pending";
+
 
     const updatedBooking = await Booking.findByIdAndUpdate(id, updateData, {
       new: true,
