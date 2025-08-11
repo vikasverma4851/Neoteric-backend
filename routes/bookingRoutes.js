@@ -8,6 +8,7 @@ const {
   deleteBooking,
   getAllBookingAmounts,
   receiveBookingAmount,
+  updateBBAStatus
 
 } = require("../controllers/bookingController");
 const { protect, authorizeRoles } = require("../middlewares/authMiddleware");
@@ -20,6 +21,7 @@ router.put("/:id",protect, updateBooking);
 router.delete("/:id",protect,deleteBooking );
 router.post('/receive', protect, receiveBookingAmount);
 router.get('/bookingAmtHistory', protect, getAllBookingAmounts);
+router.patch('/:id/bba-status', protect, updateBBAStatus);
 
 
 module.exports = router;

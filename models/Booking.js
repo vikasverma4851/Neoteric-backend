@@ -89,6 +89,7 @@ const bookingSchema = new mongoose.Schema({
   nocGranted: { type: Boolean, default: false },
   nocGrantedOn: { type: Date },
   nocGrantedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  bbaStatus:{type:Boolean , default:false},
   nocRemarks: { type: String, trim: true },
   proceedToNoDue: { type: Boolean, default: false },
   clearOtherDetails :{type:Boolean, default:false},

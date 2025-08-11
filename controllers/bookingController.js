@@ -449,6 +449,37 @@ exports.getAllBookingAmounts = async (req, res) => {
   }
 };
 
+exports.updateBBAStatus = async (req, res) => {
+  try {
+    const { id } = req.params; // Booking ID
+    const { bbaStatus } = req.body;
+
+    // Validate input
+    if (typeof bbaStatus !== "boolean") {
+      return res.status(400).json({ message: "bbaStatus must be a boolean value." });
+    }
+
+    // Update booking
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      id,
+      { bbaStatus },
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found." });
+    }
+
+    res.status(200).json({
+      message: "BBA Status updated successfully.",
+      booking: updatedBooking
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 // const Booking = require("../models/Booking");
 
