@@ -10,6 +10,7 @@ const paymentReconciliationRoutes = require("./routes/paymentReconciliationRoute
 const paymentHistoryRoutes = require("./routes/paymentHistoryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const reportRoutes = require("./routes/reportsRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 const { upload } = require("./middlewares/multerConfig")
 
 const nocRoutes = require("./routes/nocRoutes");
@@ -40,6 +41,7 @@ app.get("/", (req, res) => {
 
 // app.use('/api/upload', uploadRoutes);
 
+app.use("/api/admin", dashboardRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 // Routes
