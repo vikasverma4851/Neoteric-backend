@@ -116,6 +116,18 @@ exports.createPaymentReconciliation = async (req, res) => {
       if (!isSubInstallment && todayReceiving < installment.amount && todayReceiving > 0) {
         const remainingBalance = installment.amount - newTotalReceived;
         const subInstallmentNo = `${installmentNo}-sub`;
+
+
+
+         // ✅ Update the parent installment amount to the received amount so far
+  updatedInstallments[installmentIndex] = {
+    ...updatedInstallments[installmentIndex],
+    amount: newTotalReceived, // Set to actual received amount
+    balance: 0, // Because this parent is now considered fully covered
+    paid: true, // Mark parent as paid
+  };
+
+
         if (!updatedInstallments.some((inst) => inst.installmentNo === subInstallmentNo)) {
           const subInstallment = {
             installmentNo: subInstallmentNo,
