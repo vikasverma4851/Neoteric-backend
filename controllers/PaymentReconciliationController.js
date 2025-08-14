@@ -56,12 +56,29 @@ exports.createPaymentReconciliation = async (req, res) => {
         return res.status(400).json({ message: `Commitment date is mandatory for sub-installment ${installmentNo}.` });
       }
 
+
+ 
+
       const installmentIndex = updatedInstallments.findIndex((inst) => inst.installmentNo === installmentNo);
       if (installmentIndex === -1) {
         return res.status(404).json({ message: `Installment ${installmentNo} not found.` });
       }
 
       const installment = updatedInstallments[installmentIndex];
+
+
+           // ✅ New validation: Sub-installment must be fully paid
+if (isSubInstallment) {
+  const subInstallmentAmount = installment.amount;
+  if (todayReceiving > 0 &&   todayReceiving !== subInstallmentAmount) {
+    return res.status(400).json({
+      success:false,
+      message: `Sub-installment ${installmentNo} must be paid in full. Expected: ${subInstallmentAmount}, Received: ${todayReceiving}`,
+    });
+  }
+}
+
+
       const previousReconciliations = await PaymentReconciliation.aggregate([
         { $match: { emiId: emi._id, installmentNo } },
         { 
@@ -99,6 +116,7 @@ exports.createPaymentReconciliation = async (req, res) => {
 
       if (newTotalInterestReceived > interest) {
         return res.status(400).json({
+          
           message: `Interest received exceeds calculated interest for ${installmentNo}. Allowed: ${interest}, Attempted: ${newTotalInterestReceived}`,
         });
       }
